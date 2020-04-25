@@ -1,0 +1,18 @@
+name: "nr.powerline"
+version: "0.0.1"
+author: "Niklas Rosenstein <rosensteinniklas@gmail.com>"
+license: "MIT"
+description: "Package description here."
+requirements:
+  - python ^3.4
+  - nr.parsing.core ~0.0.1
+  - nr.sumtype ~0.0.3
+  - termcolor ^1.1.0
+entrypoints:
+  console_scripts:
+    - nr-powerline = nr.powerline.main:main
+  nr.powerline.plugins:
+    - c = nr.powerline.plugins.characters:CharactersPlugin
+    - git = nr.powerline.plugins.git:GitPlugin
+    - session = nr.powerline.plugins.session:SessionPlugin
+    - time = nr.powerline.plugins.time:TimePlugin
