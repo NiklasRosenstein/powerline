@@ -53,6 +53,7 @@ class PowerLine(object):
   def __str__(self):
     result = [termcolor.RESET]
     pen = Pen()
+    new_pen = pen
     for i, op in enumerate(self._drawops):
       if op.is_set_pen():
         new_pen = op.pen
@@ -145,10 +146,10 @@ class PowerLine(object):
     return result
 
   def print_(self):
-    if os.name == 'nt':
-      sys.stdout.buffer.write(str(self).encode('utf8'))
-    else:
-      print(str(self), end='')
+    sys.stdout.buffer.write(str(self).encode('utf8'))
+    #if os.name == 'nt':
+    #else:
+    #  print(str(self), end='')
 
 
 class Pen(object):
