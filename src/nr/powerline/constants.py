@@ -32,9 +32,9 @@ function _nr_powerline_direct() {
     _nr_powerline_alt
   fi
 }
-if [ `uname` = *MSYS_NT* ]; then
+if [[ `uname` =~ MSYS_NT.* ]]; then
   export PS1='`_nr_powerline_direct`'
 else
-  export PS1='`_powerline`'
+  export PS1='`_nr_powerline_bootstrapper`'
 fi
 '''
