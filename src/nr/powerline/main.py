@@ -1,6 +1,7 @@
 
 from __future__ import print_function
 from . import daemon
+from .constants import BASH_PS1
 from nr.utils.process import process_exists, process_terminate, replace_stdio, spawn_daemon
 import argparse
 import os
@@ -46,7 +47,14 @@ def main(argv=None, prog=None):
   parser.add_argument('--stop', action='store_true')
   parser.add_argument('--status', action='store_true')
   parser.add_argument('--exit-code', action='store_true')
+  parser.add_argument('--src', choices=('bash',))
   args = parser.parse_args(argv)
+
+  if args.src == 'bash':
+    print(BASH_PS1)
+    sys.exit(0)
+  elif args.src:
+    parser.error('unexpected argument for --src: {!r}'.format(args.src))
 
   if not args.start and not args.stop and not args.status:
     powerline_supplier(args.file)().print_()
