@@ -32,7 +32,7 @@ import sys
 import termcolor
 
 __author__ = 'Niklas Rosenstein <rosensteinniklas@gmail.com>'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 PLUGINS_ENTRYPOINT = 'nr.powerline.plugins'
 COLORMODE_ASCII = 'ascii'
