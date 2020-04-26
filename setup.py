@@ -11,7 +11,7 @@ with io.open('src/nr/powerline/__init__.py', encoding='utf8') as fp:
 with io.open('README.md', encoding='utf8') as fp:
   long_description = fp.read()
 
-requirements = ['nr.parsing.core >=0.0.1,<0.1.0', 'nr.sumtype >=0.0.3,<0.1.0', 'termcolor >=1.1.0,<2.0.0']
+requirements = ['nr.parsing.core >=0.0.1,<0.1.0', 'nr.sumtype >=0.0.3,<0.1.0', 'nr.utils.process >=0.0.3,<0.1.0', 'termcolor >=1.1.0,<2.0.0']
 
 setuptools.setup(
   name = 'nr.powerline',
