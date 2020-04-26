@@ -11,11 +11,13 @@ import sys
 def default_powerline():
   from nr.powerline import PowerLine
   p = PowerLine()
-  p.set_pen('white', 'magenta')
-  p.add_part(' {c.DIRECTORY} {session.cwd} !{c.RIGHT_TRIANGLE}')
   git = p.get_plugin('git')
+
+  p.set_pen('white', 'blue')
+  p.add_part(' {c.GIT_FOLDER} ' if git.project else ' {c.DIRECTORY} ')
+  p.add_part('{session.cwd} !{c.RIGHT_TRIANGLE}')
   if git.project:
-    p.set_pen(None, 'blue')
+    p.set_pen(None, 'yellow')
     p.add_part(' {c.BRANCH} {git.branch} !{c.RIGHT_TRIANGLE}')
   p.add_part(' ')
   p.clear_pen()
