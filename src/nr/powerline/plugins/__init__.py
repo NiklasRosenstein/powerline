@@ -12,4 +12,6 @@ def cached_property(func):
       value = func(self)
       setattr(self, cache_name, value)
       return value
-  return property(cacher)
+  def setter(self, value):
+    setattr(self, cache_name, value)
+  return property(cacher, setter)

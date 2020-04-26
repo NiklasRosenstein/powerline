@@ -58,7 +58,7 @@ class SocketConf(nr.sumtype.Sumtype):
 
 class PowerlineDaemon:
 
-  def __init__(self, conf: SocketConf, powerline: PowerLine) -> None:
+  def __init__(self, conf: SocketConf, powerline: Callable[[], PowerLine]) -> None:
     self._conf = conf
     self._powerline = powerline
 
@@ -74,10 +74,9 @@ class PowerlineDaemon:
         except _socket.timeout:
           continue
         path = conn.makefile().readline().strip()
-        print('>', path)
         try:
           os.chdir(path)
-          result = str(self._powerline)
+          result = str(self._powerline())
         except Exception as exc:
           result = traceback.format_exc()
         conn.makefile('w').write(result)
