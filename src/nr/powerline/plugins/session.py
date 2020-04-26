@@ -23,7 +23,7 @@ class SessionPlugin(Plugin):
         raise ValueError
       if relpath == os.curdir:
         return '~'
-      return '~/' + relpath
+      return os.path.join('~', relpath)
     except ValueError:
       return cwd
     assert False
