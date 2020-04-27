@@ -21,7 +21,7 @@ setuptools.setup(
   description = 'Package description here.',
   long_description = long_description,
   long_description_content_type = 'text/markdown',
-  url = None,
+  url = 'https://git.niklasrosenstein.com/NiklasRosenstein/powerline',
   license = 'MIT',
   packages = setuptools.find_packages('src', ['test', 'test.*', 'docs', 'docs.*']),
   package_dir = {'': 'src'},
