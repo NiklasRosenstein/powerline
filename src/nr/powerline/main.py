@@ -1,7 +1,7 @@
 
 from __future__ import print_function
 from . import daemon
-from .constants import BASH_PS1
+from .shells import get_bash_ps1
 from nr.utils.process import process_exists, process_terminate, replace_stdio, spawn_daemon
 import argparse
 import os
@@ -28,7 +28,7 @@ def default_powerline():
 def powerline_supplier(filename):
   if filename:
     with open(filename) as fp:
-      code = compile(fp.read(), 'exec', filename)
+      code = compile(fp.read(), filename, 'exec')
     def func():
       scope = {}
       exec(code, scope)
@@ -36,7 +36,6 @@ def powerline_supplier(filename):
   else:
     func = default_powerline
   return func
-
 
 
 def main(argv=None, prog=None):
@@ -51,7 +50,7 @@ def main(argv=None, prog=None):
   args = parser.parse_args(argv)
 
   if args.src == 'bash':
-    print(BASH_PS1)
+    print(get_bash_ps1(args.file))
     sys.exit(0)
   elif args.src:
     parser.error('unexpected argument for --src: {!r}'.format(args.src))

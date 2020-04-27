@@ -21,21 +21,25 @@ __Roadmap__
 * Breadcrumb working directory
 * Truecolor and xterm-256 color support
 
-### Plugins
+__Configuration__
 
-The entry point for powerline plugins is `nr.powerline.plugins`. Entry points
-must inherit from the `nr.powerline.plugins.Plugin` class.
+Simply pass the `--file` option when sourcing the bash code. It must point to
+a Python script that makes use of the `nr.powerline` API. Example:
 
-### Configuration
+```py
+from nr.powerline import PowerLine
+powerline = PowerLine()
+git = powerline.get_plugin('git')
 
-The powerline can be configured with environment variables.
-
-| Variable | Description |
-| -------- | ----------- |
-| `NR_POWERLINE_SCRIPT` | Path to a Python script that uses the `nr.powerline` API to render a powerline to stdout. |
-| `NR_POWERLINE_CODE` | Actual Python code that uses the `nr.powerline` API to render a powerline to stdout. |
-
-Check the default configuration in `src/nr/powerline/main.py` for an example script.
+powerline.set_pen('white', 'blue')
+powerline.add_part(' {c.GIT_FOLDER} ' if git.project else ' {c.DIRECTORY} ')
+powerline.add_part('{session.cwd} !{c.RIGHT_TRIANGLE}')
+if git.project:
+    powerline.set_pen(None, 'yellow')
+    powerline.add_part(' {c.BRANCH} {git.branch} !{c.RIGHT_TRIANGLE}')
+    powerline.add_part(' ')
+    powerline.clear_pen()
+```
 
 ---
 
