@@ -4,14 +4,19 @@ Simple powerline implementation, only tested in Bash. It is recommended that
 you use a font from [NerdFonts](https://nerdfonts.com/#downloads) in order to
 have proper support for special characters (like the right triangle).
 
-__Simple Setup__
+__Requirements__
+
+- Bash
+- Pipx
+- Python 3.5+
+
+__Installation__
 
     $ pipx install nr.powerline
     $ source <(nr-powerline --src bash)
 
 __Roadmap__
 
-* Daemon to run in the background to speed up powerline rendering.
 * Pass previous status code into `nr-powerline` command.
 * Breadcrumb working directory
 * Truecolor and xterm-256 color support
