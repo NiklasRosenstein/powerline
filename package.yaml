@@ -5,7 +5,7 @@ license: "MIT"
 description: "Package description here."
 url: "https://git.niklasrosenstein.com/NiklasRosenstein/powerline"
 requirements:
-  - python ^3.4
+  - python ^3.5
   - nr.parsing.core ~0.0.1
   - nr.sumtype ~0.0.3
   - nr.utils.process ~0.0.3
