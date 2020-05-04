@@ -4,6 +4,8 @@ Simple powerline implementation, only tested in Bash. It is recommended that
 you use a font from [NerdFonts](https://nerdfonts.com/#downloads) in order to
 have proper support for special characters (like the right triangle).
 
+![](screenshot.png)
+
 __Requirements__
 
 - Bash
