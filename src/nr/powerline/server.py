@@ -102,10 +102,11 @@ class PowerlineServer:
     try:
       data = json.loads(conn.makefile().read())
       request = Request.from_json(data)
-      context = PowerlineContext(request.path, request.exit_code, env=request.parse_environ())
+      context = PowerlineContext(request.path, request.exit_code, env=request.parse_environ(), is_server=True)
       result = self._powerline.render(context,
         escape_unprintable=request.escape_unprintable)
-    except Exception as exc:
+    except Exception:
+      traceback.print_exc()
       result = traceback.format_exc()
 
     conn.makefile('w').write(result)

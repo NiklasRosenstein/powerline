@@ -100,13 +100,21 @@ def render(
 
 class PowerlineContext:
 
-  def __init__(self, path: str, exit_code: int = 0, default_style: ansi.Style = None, env: dict = None):
+  def __init__(self,
+      path: str,
+      exit_code: int = 0,
+      default_style: ansi.Style = None,
+      env: dict = None,
+      is_server: bool = False):
     self.path = path
     self.exit_code = exit_code
     self.default_style = default_style or ansi.parse_style('white blue')
-    self.env = env or os.environ
+    self.env = env
+    self.is_server = is_server
 
   def getenv(self, name: str, default: str = None) -> Optional[str]:
+    if self.env is None:
+      return os.getenv(name, default)
     return self.env.get(name, default)
 
 
