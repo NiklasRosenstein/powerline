@@ -25,14 +25,23 @@ import os
 import socket as _socket
 import traceback
 
-from nr.databind.core import Field, Struct
+from nr.databind.core import Field, IntegerType, Struct
 from nr.databind.json import JsonMixin
+from typing import Dict
 
 
 class Request(Struct, JsonMixin):
   path = Field(str)
   escape_unprintable = Field(bool, default=True)
-  exit_code = Field(int, default=0)
+  exit_code = Field(IntegerType(strict=False), default=0)
+  environ = Field(str, default='')
+
+  def parse_environ(self) -> Dict[str, str]:
+    result = {}
+    for line in self.environ.splitlines():
+      key, value = line.partition('=')[::2]
+      result[key] = value
+    return result
 
 
 class Address(nr.sumtype.Sumtype):
@@ -91,8 +100,9 @@ class PowerlineServer:
     from . import PowerlineContext
 
     try:
-      request = Request.from_json(json.loads(conn.makefile().readline().strip()))
-      context = PowerlineContext(request.path, request.exit_code)
+      data = json.loads(conn.makefile().read())
+      request = Request.from_json(data)
+      context = PowerlineContext(request.path, request.exit_code, env=request.parse_environ())
       result = self._powerline.render(context,
         escape_unprintable=request.escape_unprintable)
     except Exception as exc:
