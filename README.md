@@ -10,6 +10,7 @@ __Requirements__
 - Pipx
 - Python 3.5+
 - Linux/macOS
+- jq
 
 __Installation__
 
