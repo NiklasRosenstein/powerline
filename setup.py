@@ -40,6 +40,7 @@ setuptools.setup(
       'cwd = nr.powerline.cwd:CwdPlugin',
       'git = nr.powerline.git:GitPlugin',
       'text = nr.powerline.text:TextPlugin',
+      'venv = nr.powerline.venv:VenvPlugin',
     ]
   },
   cmdclass = {},

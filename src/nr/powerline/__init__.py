@@ -100,10 +100,14 @@ def render(
 
 class PowerlineContext:
 
-  def __init__(self, path: str, exit_code: int = 0, default_style: ansi.Style = None):
+  def __init__(self, path: str, exit_code: int = 0, default_style: ansi.Style = None, env: dict = None):
     self.path = path
     self.exit_code = exit_code
     self.default_style = default_style or ansi.parse_style('white blue')
+    self.env = env or os.environ
+
+  def getenv(self, name: str, default: str = None) -> Optional[str]:
+    return self.env.get(name, default)
 
 
 class AnsiModule(nr.databind.core.Module):
@@ -224,5 +228,3 @@ def main(argv=None):
       if args.exit_code:
         sys.exit(0)
       print('running')
-
-  print('end')

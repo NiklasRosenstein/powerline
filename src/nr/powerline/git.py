@@ -56,8 +56,8 @@ class GitPlugin(Struct):
     'conflicted': Field(ansi.Color, default=ansi.SgrColor('red')),
     'modified': Field(ansi.Color, default=ansi.SgrColor('yellow')),
     'staged': Field(ansi.Color, default=ansi.SgrColor('green')),
-    'else_': Field(ansi.Color, FieldName('else'), default=ansi.SgrColor('magenta')),
-  }, default=Field.DEFAULT_CONSTRUCT)
+    'else_': Field(ansi.Color, FieldName('else'), default=ansi.SgrColor('black', True)),
+  }, nullable=True, default=Field.DEFAULT_CONSTRUCT)
   icons = Field({
     'conflicted': Field(str, default=chars.SNOWFLAKE),
     'modified': Field(str, default=chars.PENCIL),
@@ -114,16 +114,16 @@ class GitPlugin(Struct):
     status = self._get_repo_status(context.path)
     if status.conflicted:
       icon = self.icons.conflicted if self.icons else ''
-      bg = self.colors.conflicted
+      bg = self.colors.conflicted if self.colors else self.style.bg
     elif status.modified:
       icon = self.icons.modified if self.icons else ''
-      bg = self.colors.modified
+      bg = self.colors.modified if self.colors else self.style.bg
     elif status.staged:
       icon = self.icons.staged if self.icons else ''
-      bg = self.colors.staged
+      bg = self.colors.staged if self.colors else self.style.bg
     else:
       icon = self.icons.else_ if self.icons else ''
-      bg = self.colors.else_
+      bg = self.colors.else_ if self.colors else self.style.bg
 
     if self.style:
       style = self.style.merge(context.default_style)

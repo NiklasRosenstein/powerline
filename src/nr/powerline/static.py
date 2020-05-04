@@ -23,6 +23,10 @@
 default_powerline = {
   'plugins': [
     {
+      'type': 'venv',
+      'style': 'bg:black italic'
+    },
+    {
       'type': 'cwd',
       'breadcrumbs': {}
     },
