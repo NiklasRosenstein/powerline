@@ -63,7 +63,7 @@ class GitPlugin(Struct):
     'modified': Field(str, default=chars.PENCIL),
     'staged': Field(str, default=chars.HEAVY_CHECKMARK),
     'else_': Field(str, FieldName('else'), default=chars.HEAVY_CHECKMARK)
-  }, default=Field.DEFAULT_CONSTRUCT)
+  }, nullable=True, default=Field.DEFAULT_CONSTRUCT)
   padding = Field(str, default=' ')
 
   _Status = collections.namedtuple('Status', 'new,conflicted,modified,staged')
@@ -113,16 +113,16 @@ class GitPlugin(Struct):
 
     status = self._get_repo_status(context.path)
     if status.conflicted:
-      icon = self.icons.conflicted
+      icon = self.icons.conflicted if self.icons else ''
       bg = self.colors.conflicted
     elif status.modified:
-      icon = self.icons.modified
+      icon = self.icons.modified if self.icons else ''
       bg = self.colors.modified
     elif status.staged:
-      icon = self.icons.staged
+      icon = self.icons.staged if self.icons else ''
       bg = self.colors.staged
     else:
-      icon = self.icons.else_
+      icon = self.icons.else_ if self.icons else ''
       bg = self.colors.else_
 
     if self.style:
