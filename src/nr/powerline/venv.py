@@ -33,8 +33,9 @@ class VenvPlugin(Struct):
   style = Field(ansi.Style, default=None)
 
   def render(self, context: PowerlineContext) -> Iterable[Pen]:
-    env = os.getenv('VIRTUAL_ENV') or os.getenv('CONDA_ENV_PATH') or os.getenv('CONDA_DEFAULT_ENV')
-    if os.getenv('VIRTUAL_ENV') and os.path.basename(env) == '.venv':
+    env = (context.getenv('VIRTUAL_ENV') or context.getenv('CONDA_ENV_PATH') or
+           context.getenv('CONDA_DEFAULT_ENV'))
+    if context.getenv('VIRTUAL_ENV') and os.path.basename(env) == '.venv':
       env = os.path.dirname(env)
     if not env:
       return
