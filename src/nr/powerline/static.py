@@ -38,32 +38,29 @@ default_powerline = {
 }
 
 bash_src = '''
-__PS1_SAVE="$PS1"
-function _powerline_alt() {
-  echo "$__PS1_SAVE"
-}
+_POWERLINE_ALT="$PS1"
 function _powerline_make_request() {
-  echo '{"path": "'$PWD'", "exit_code": '$?'}' | nc -U ~/.local/powerline/daemon.sock 2>/dev/null
+  echo '{"path": "'$PWD'", "exit_code": '$1'}' | nc -U ~/.local/powerline/daemon.sock 2>/dev/null
   return $?
 }
 function _powerline_bootstrapper() {
-  _powerline_make_request
+  _powerline_make_request $1
   if [ $? != 0 ]; then
     if which nr-powerline >/dev/null; then
       nr-powerline --start
       if ! ( nr-powerline --status --exit-code >/dev/null ); then
         2> echo "Could not start powerline daemon."
-        _powerline_alt
+        echo "$_POWERLINE_ALT"
       else
-        _powerline_make_request
+        _powerline_make_request $1
       fi
     else
-      _powerline_alt
+      echo "$_POWERLINE_ALT"
     fi
   fi
 }
 function _update_ps1() {
-  PS1="`_powerline_bootstrapper` "
+  PS1="`_powerline_bootstrapper $?` "
 }
 if [[ $TERM != linux && ! $PROMPT_COMMAND =~ _update_ps1 ]]; then
     PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"
