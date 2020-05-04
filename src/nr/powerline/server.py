@@ -110,7 +110,12 @@ class PowerlineServer:
       data = json.loads(conn.makefile().read())
       logger.info('Request from %s: %r', address, data)
       request = Request.from_json(data)
-      context = PowerlineContext(request.path, request.exit_code, env=request.parse_environ(), is_server=True)
+      context = PowerlineContext(
+        request.path,
+        request.exit_code,
+        default_style=self._powerline.default_style,
+        env=request.parse_environ(),
+        is_server=True)
       result = self._powerline.render(context,
         escape_unprintable=request.escape_unprintable)
     except Exception:

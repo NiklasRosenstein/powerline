@@ -149,8 +149,7 @@ class PowerlinePlugin(Interface):
 class Powerline(nr.databind.core.Struct):
   plugins = nr.databind.core.Field([PowerlinePlugin])
   default_style = nr.databind.core.Field(ansi.Style,
-    nr.databind.core.FieldName('default-style'),
-    default=ansi.parse_style('white black'))
+    nr.databind.core.FieldName('default-style'), default=None)
 
   def render(self,
       context: PowerlineContext,
@@ -200,6 +199,10 @@ def main(argv=None):
   powerline = load_powerline(
     args.file or os.path.expanduser('~/.local/powerline/config.json'),
     default=static.default_powerline)
+  context = PowerlineContext(
+    os.getcwd(),
+    args.exit_code or 0,
+    default_style=powerline.default_style)
 
   if args.src == 'bash':
     print(static.bash_src)
