@@ -45,7 +45,11 @@ default_powerline = {
 bash_src = '''
 _POWERLINE_ALT="$PS1"
 function _powerline_make_request() {
-  echo '{"path": "'$PWD'", "exit_code": '$1'}' | nc -U ~/.local/powerline/daemon.sock 2>/dev/null
+  local payload=$(jq -n --arg pwd "$PWD" --arg ec "$1" --arg env "$(env)" '{path: $pwd, exit_code: $ec, environ: $env}' 2>/dev/null)
+  if [[ $? != 0 ]]; then
+    payload='{"path": "'"$PWD"'", "exit_code": '"$1"'}'
+  fi
+  echo "$payload" | nc -U ~/.local/powerline/daemon.sock 2>/dev/null
   return $?
 }
 function _powerline_bootstrapper() {
