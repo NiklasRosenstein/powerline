@@ -30,6 +30,7 @@ from typing import Iterable, Optional, Sequence, TextIO, Union
 import argparse
 import io
 import json
+import logging
 import os
 import nr.databind.core, nr.databind.json
 import signal
@@ -37,6 +38,8 @@ import sys
 
 __author__ = 'Niklas Rosenstein <rosensteinniklas@gmail.com>'
 __version__ = '0.0.8'
+
+logger = logging.getLogger(__name__)
 
 
 class Pen(Sumtype):
@@ -185,7 +188,8 @@ def main(argv=None):
   parser.add_argument('--src', choices=('bash',))
   args = parser.parse_args(argv)
 
-  context = PowerlineContext(os.getcwd(), args.exit_code or 0)
+  logging.basicConfig(format='[%(asctime)s - %(levelname)s]: %(message)s', level=logging.INFO)
+
   powerline = load_powerline(
     args.file or os.path.expanduser('~/.local/powerline/config.json'),
     default=static.default_powerline)
@@ -212,13 +216,13 @@ def main(argv=None):
     daemon_pid = None
 
   if args.stop and daemon_pid:
-    print('Stopping', daemon_pid)
+    logger.info('Stopping %d', daemon_pid)
     process_terminate(daemon_pid)
   if args.start:
     def run(powerline, stdout):
       with open(pid_file, 'w') as fp:
         fp.write(str(os.getpid()))
-      print('Started', os.getpid())
+      logger.info('Started %d', os.getpid())
       signal.signal(signal.SIGTERM, lambda: os.remove(pid_file))
       replace_stdio(None, stdout, stdout)
       conf = server.Address.UnixFile(socket_file)

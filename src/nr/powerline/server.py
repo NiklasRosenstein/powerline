@@ -20,6 +20,7 @@
 # IN THE SOFTWARE.
 
 import json
+import logging
 import nr.sumtype
 import os
 import socket as _socket
@@ -28,6 +29,8 @@ import traceback
 from nr.databind.core import Field, IntegerType, Struct
 from nr.databind.json import JsonMixin
 from typing import Dict
+
+logger = logging.getLogger(__name__)
 
 
 class Request(Struct, JsonMixin):
@@ -82,6 +85,7 @@ class PowerlineServer:
   def run_forever(self):
     socket = _socket.socket(self._conf.type())
     self._conf.bind(socket)
+    logger.info('Listening to %r.', self._conf)
     socket.listen(5)
     socket.settimeout(0.1)
     try:
@@ -96,6 +100,7 @@ class PowerlineServer:
     finally:
       socket.close()
       if isinstance(self._conf, Address.UnixFile):
+        logger.info('Removing %r', self._conf.filename)
         os.remove(self._conf.filename)
 
   def _handle_connection(self, conn, address):
@@ -103,12 +108,13 @@ class PowerlineServer:
 
     try:
       data = json.loads(conn.makefile().read())
+      logger.info('Request from %s: %r', address, data)
       request = Request.from_json(data)
       context = PowerlineContext(request.path, request.exit_code, env=request.parse_environ(), is_server=True)
       result = self._powerline.render(context,
         escape_unprintable=request.escape_unprintable)
     except Exception:
-      traceback.print_exc()
+      logger.exception('Error handling request from %s', address)
       result = traceback.format_exc()
 
     conn.makefile('w').write(result)
