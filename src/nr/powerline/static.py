@@ -63,7 +63,7 @@ function _powerline_bootstrapper() {
   fi
 }
 function _update_ps1() {
-  PS1=`_powerline_bootstrapper`
+  PS1="`_powerline_bootstrapper` "
 }
 if [[ $TERM != linux && ! $PROMPT_COMMAND =~ _update_ps1 ]]; then
     PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"
