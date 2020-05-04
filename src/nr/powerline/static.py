@@ -44,6 +44,7 @@ default_powerline = {
     {
       'type': 'text',
       'text': ' $ ',
+      'style': 'bg:black',
       'is-status-indicator': True
     }
   ]
