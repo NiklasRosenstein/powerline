@@ -75,8 +75,15 @@ def render(
   for index, pen in enumerate(pen_sequence):
     if isinstance(pen, Pen.Flipchar):
       new_bg = _find_next_bg(index+1) or ansi.SgrColor('DEFAULT')
-      style = ansi.Style(style.bg, new_bg)
-      text = pen.char
+      if new_bg == style.bg:
+        # Note: This is more of a hack in cases where two plugins
+        #   have the same background color, rendering the common
+        #   RIGHT_TRIANGLE flipchar invisible.
+        text = chars.RIGHT_TRIANGLE_THIN
+        style = ansi.Style(None, new_bg)
+      else:
+        style = ansi.Style(style.bg, new_bg)
+        text = pen.char
     elif isinstance(pen, Pen.Text):
       style = pen.style or style
       text = pen.text
