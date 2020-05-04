@@ -20,7 +20,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from . import ansi, chars, server, static
+from . import chars, server, static
+from nr import ansiterm as ansi
 from nr.interface import Interface
 from nr.sumtype import Constructor, Sumtype
 from nr.utils.process import process_exists, process_terminate, replace_stdio, spawn_daemon
@@ -102,7 +103,7 @@ class PowerlineContext:
   def __init__(self, path: str, exit_code: int = 0, default_style: ansi.Style = None):
     self.path = path
     self.exit_code = exit_code
-    self.default_style = default_style or ansi.parse_style('white black')
+    self.default_style = default_style or ansi.parse_style('white blue')
 
 
 class AnsiModule(nr.databind.core.Module):
@@ -125,6 +126,9 @@ class PowerlinePlugin(Interface):
 
 class Powerline(nr.databind.core.Struct):
   plugins = nr.databind.core.Field([PowerlinePlugin])
+  default_style = nr.databind.core.Field(ansi.Style,
+    nr.databind.core.FieldName('default-style'),
+    default=ansi.parse_style('white black'))
 
   def render(self,
       context: PowerlineContext,
@@ -220,3 +224,5 @@ def main(argv=None):
       if args.exit_code:
         sys.exit(0)
       print('running')
+
+  print('end')

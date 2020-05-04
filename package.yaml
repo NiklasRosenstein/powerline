@@ -6,6 +6,7 @@ description: "Package description here."
 url: "https://git.niklasrosenstein.com/NiklasRosenstein/powerline"
 requirements:
   - python ^3.5
+  - nr.ansiterm ~0.0.1
   - nr.databind.core ~0.0.6
   - nr.databind.json ~0.0.6
   - nr.interface ~0.0.2
@@ -15,9 +16,6 @@ entrypoints:
   console_scripts:
     - nr-powerline = nr.powerline:main
   nr.powerline.plugins:
-    #- c = nr.powerline.plugins.characters:CharactersPlugin
     - cwd = nr.powerline.cwd:CwdPlugin
     - git = nr.powerline.git:GitPlugin
     - text = nr.powerline.text:TextPlugin
-    #- session = nr.powerline.plugins.session:SessionPlugin
-    #- time = nr.powerline.plugins.time:TimePlugin

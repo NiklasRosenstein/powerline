@@ -20,7 +20,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from . import ansi, chars, Pen, PowerlineContext, PowerlinePlugin
+from . import chars, Pen, PowerlineContext, PowerlinePlugin
+from nr import ansiterm as ansi
 from nr.databind.core import Field, FieldName, Struct
 from nr.interface import implements, override
 from typing import Iterable, Optional
@@ -131,7 +132,7 @@ class GitPlugin(Struct):
     style = style.replace(bg=bg)
 
     if icon:
-      icon = self.padding + icon
+      icon = self.padding + icon + self.padding
 
     yield Pen.Text(icon + '{0}{1}{0}'.format(self.padding, branch), style)
     yield Pen.Flipchar(chars.RIGHT_TRIANGLE)
