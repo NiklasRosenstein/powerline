@@ -91,6 +91,8 @@ class PowerlineServer:
         except _socket.timeout:
           continue
         self._handle_connection(conn, address)
+    except KeyboardInterrupt:
+      pass
     finally:
       socket.close()
       if isinstance(self._conf, Address.UnixFile):
