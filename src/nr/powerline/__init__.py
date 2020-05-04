@@ -1,279 +1,222 @@
-# -*- coding: utf8 -*-
-# Copyright (c) 2020 Niklas Rosenstein
+# -*- coding: utf-8 -*-
+# MIT License
+#
+# Copyright (c) 2020, Niklas Rosenstein
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to
-# deal in the Software without restriction, including without limitation the
-# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# this software and associated documentation files (the "Software"), to deal in
+# Software without restriction, including without limitation the rights to use,
+# modify, merge, publish, distribute, sublicense, and/or sell copies of the
+# and to permit persons to whom the Software is furnished to do so, subject to
+# following conditions:
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in all
+# or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from __future__ import print_function
+from . import ansi, chars, server, static
+from nr.interface import Interface
+from nr.sumtype import Constructor, Sumtype
+from nr.utils.process import process_exists, process_terminate, replace_stdio, spawn_daemon
+from typing import Iterable, Optional, Sequence, TextIO, Union
 
-import copy
+import argparse
+import io
+import json
 import os
-import pkg_resources
-import nr.parsing.core
-import nr.sumtype
-import re
-import six
+import nr.databind.core, nr.databind.json
+import signal
 import sys
-import termcolor
 
 __author__ = 'Niklas Rosenstein <rosensteinniklas@gmail.com>'
 __version__ = '0.0.7'
 
-PLUGINS_ENTRYPOINT = 'nr.powerline.plugins'
-COLORMODE_ASCII = 'ascii'
-COLORMODE_TRUECOLOR = 'truecolor'
+
+class Pen(Sumtype):
+  Text = Constructor('text,style')
+  Flipchar = Constructor('char')
 
 
-@six.python_2_unicode_compatible
-class PowerLine(object):
+def render(
+    pen_sequence: Sequence[Pen],
+    fp: TextIO = None,
+    escape_unprintable: bool = False
+    ) -> Optional[str]:
+  r"""
+  Render a sequence of #Pen instructions to *fp*, or returns it as a string.
+  If *escape_unprintable* is enabled, unprintable characters will be wrapped
+  in `\[` and `\]` to allow the shell to properly count the width of the
+  resulting string.
+  """
+
+  if fp is None:
+    fp = io.StringIO()
+    return_result = True
+  else:
+    return_result = False
+
+  def _find_next_bg(offset: int) -> Optional[ansi.Color]:
+    for pen in pen_sequence[offset:]:  # TODO (@NiklasRosenstein): islice()?
+      if isinstance(pen, Pen.Text):
+        return pen.style.bg
+    return None
+
+  style = ansi.Style()
+  for index, pen in enumerate(pen_sequence):
+    if isinstance(pen, Pen.Flipchar):
+      new_bg = _find_next_bg(index+1) or ansi.SgrColor('DEFAULT')
+      style = ansi.Style(style.bg, new_bg)
+      text = pen.char
+    elif isinstance(pen, Pen.Text):
+      style = pen.style or style
+      text = pen.text
+    else:
+      raise TypeError('expected Pen object, got {!r}'.format(
+        type(pen).__name__))
+    if escape_unprintable:
+      fp.write('\\[')
+    fp.write(str(style))
+    if escape_unprintable:
+      fp.write('\\]')
+    fp.write(text)
+    if escape_unprintable:
+      fp.write('\\[')
+    fp.write(str(ansi.Attribute.RESET))
+    if escape_unprintable:
+      fp.write('\\]')
+
+  if return_result:
+    return fp.getvalue()
+
+  return None
+
+
+class PowerlineContext:
+
+  def __init__(self, path: str, exit_code: int = 0, default_style: ansi.Style = None):
+    self.path = path
+    self.exit_code = exit_code
+    self.default_style = default_style or ansi.parse_style('white black')
+
+
+class AnsiModule(nr.databind.core.Module):
 
   def __init__(self):
-    self._parts = []
-    self._plugins = {}
-    self._colors = {}
-    self._color_mode = COLORMODE_ASCII
-    self._pen = Pen()
-    self._drawops = []
-
-  def __str__(self):
-    result = [termcolor.RESET]
-    pen = Pen()
-    new_pen = pen
-    for i, op in enumerate(self._drawops):
-      if op.is_set_pen():
-        new_pen = op.pen
-      elif op.is_propagate_bg():
-        # Look ahead for the next foreground color.
-        new_pen = pen.copy()
-        new_pen.fg = new_pen.bg
-        new_pen.attrs = []
-        for anop in self._drawops[i:]:
-          if anop.is_set_pen():
-            new_pen.bg = anop.pen.bg
-            break
-        else:
-          new_pen.bg = None
-      elif op.is_blit_text():
-        result.append(render_format_string(op.text, _LazyPluginDict(self)))
-      else:
-        assert False, op
-      if pen != new_pen:
-        result.append(self.get_color_transition_codes(pen, new_pen))
-        pen = new_pen
-    result.append(termcolor.RESET)
-    return u''.join(result)
-
-  @property
-  def color_mode(self):
-    return self._color_mode
-
-  @color_mode.setter
-  def color_mode(self, value):
-    assert value in (COLORMODE_ASCII, COLORMODE_TRUECOLOR), repr(value)
-    self._color_mode = value
-
-  @property
-  def colors(self):
-    return _ColorDict(self._colors)
-
-  def add_color(self, name, value):
-    self.colors[name] = value
-
-  def get_plugin(self, name):
-    if name not in self._plugins:
-      for ep in pkg_resources.iter_entry_points(PLUGINS_ENTRYPOINT, name):
-        self._plugins[name] = ep.load()()
-        break
-      else:
-        return None
-    return self._plugins[name]
-
-  def set_pen(self, fg=NotImplemented, bg=NotImplemented, *attrs):
-    self._pen.update(fg, bg, attrs)
-    self._drawops.append(DrawOp.SetPen(self._pen.copy()))
-
-  def clear_pen(self):
-    self._pen.clear()
-
-  def add_part(self, part_format):
-    scanner = nr.parsing.core.Scanner(part_format)
-    start = scanner.index
-    while scanner:
-      if scanner.char == '!':
-        self._drawops.append(DrawOp.BlitText(part_format[start:scanner.index]))
-        start = scanner.index + 1
-        self._drawops.append(DrawOp.PropagateBg())
-      scanner.next()
-    self._drawops.append(DrawOp.BlitText(part_format[start:scanner.index]))
-
-  def get_color_code(self, name, foreground=True):
-    if self._color_mode == COLORMODE_TRUECOLOR and name in self._colors:
-      # TODO @NiklasRosenstein
-      return ''
-    mapping = termcolor.COLORS if foreground else termcolor.HIGHLIGHTS
-    prefix = '' if foreground else 'on_'
-    if prefix + name not in mapping:
-      return ''
-    return '\033[%dm' % mapping.get(prefix + name)
-
-  def get_color_transition_codes(self, curr, pen):
-    # TODO @NiklasRosenstein We should be able to compute only the terminal
-    #   instructions to change to the new colors instead of re-writing all
-    #   color instructions.
-    result = termcolor.RESET
-    if pen.fg:
-      result += self.get_color_code(pen.fg, True)
-    if pen.bg:
-      result += self.get_color_code(pen.bg, False)
-    if pen.attrs:
-      for attr in pen.attrs:
-        result += '\033[%dm' % termcolor.ATTRIBUTES.get(attr, '')
-    return result
-
-  def print_(self):
-    sys.stdout.buffer.write(str(self).encode('utf8'))
-    #if os.name == 'nt':
-    #else:
-    #  print(str(self), end='')
+    super().__init__()
+    self.register(ansi.Color, nr.databind.core.IDeserializer(
+      deserialize=lambda m, n: ansi.parse_color(n.value)))
+    self.register(ansi.Style, nr.databind.core.IDeserializer(
+      deserialize=lambda m, n: ansi.parse_style(n.value)))
 
 
-class Pen(object):
+@nr.databind.core.SerializeAs(nr.databind.core.UnionType
+  .with_entrypoint_resolver('nr.powerline.plugins'))
+class PowerlinePlugin(Interface):
 
-  def __init__(self, fg=None, bg=None, attrs=None):
-    self.fg = fg
-    self.bg = bg
-    self.attrs = attrs or []
-
-  def __repr__(self):
-    return 'Pen(fg={!r}, bg={!r}, attrs={!r})'.format(self.fg, self.bg, self.attrs)
-
-  def __eq__(self, other):
-    if type(other) is Pen:
-      return (self.fg, self.bg, self.attrs) == (other.fg, other.bg, other.attrs)
-    return False
-
-  def __ne__(self, other):
-    return not (self == other)
-
-  def update(self, fg=NotImplemented, bg=NotImplemented, attrs=NotImplemented):
-    if fg is not NotImplemented:
-      self.fg = fg
-    if bg is not NotImplemented:
-      self.bg = bg
-    if attrs is not NotImplemented:
-      if attrs is None:
-        attrs = []
-      elif not isinstance(attrs, (list, tuple)):
-        attrs = [attrs]
-      self.attrs = attrs
-
-  def clear(self):
-    self.fg = None
-    self.bg = None
-    self.attrs = []
-
-  def copy(self):
-    return copy.deepcopy(self)
+  def render(self, context: PowerlineContext) -> Iterable[Pen]:
+    ...
 
 
-class TrueColor(object):
+class Powerline(nr.databind.core.Struct):
+  plugins = nr.databind.core.Field([PowerlinePlugin])
 
-  def __init__(self, value):
-    if isinstance(value, str):
-      if value.startswith('#'):
-        v = value[1:]
-        if len(v) == 3:
-          r, g, b = v
-          r *= 2
-          g *= 2
-          b *= 2
-        elif len(v) == 6:
-          r, g, b = v[0:2], v[2:4], v[4:6]
-        else:
-          raise ValueError('invalid RGB color: {!r}'.format(value))
-        r, g, b = int(r, 16), int(g, 16), int(b, 16)
-      else:
-        raise ValueError('invalid RGB color: {!r}'.format(value))
-    elif isinstance(value, Color):
-      r, g, b = value.r, value.g, value.b
+  def render(self,
+      context: PowerlineContext,
+      fp: TextIO = None,
+      escape_unprintable: bool = False
+      ) -> Optional[str]:
+    pens = []
+    for plugin in self.plugins:
+      pens += plugin.render(context)
+    return render(pens, fp, escape_unprintable)
+
+
+def load_powerline(*try_files: str, default: Union[dict, Powerline] = None) -> Optional[Powerline]:
+  mapper = nr.databind.core.ObjectMapper(
+    AnsiModule(),
+    nr.databind.json.JsonModule(),
+  )
+  for filename in try_files:
+    if os.path.isfile(filename):
+      with open(filename) as fp:
+        data = json.load(fp)
+      return mapper.deserialize(data, Powerline, filename=filename)
+  if isinstance(default, dict):
+    default = mapper.deserialize(default, Powerline, filename='<default>')
+  return default
+
+
+def main(argv=None):
+  """
+  Entrypoint for nr-powerline.
+  """
+
+  parser = argparse.ArgumentParser()
+  parser.add_argument('exit_code', type=int, nargs='?')
+  parser.add_argument('-f', '--file')
+  parser.add_argument('-e', '--escape', action='store_true')
+  parser.add_argument('--run-dir', default=None)
+  parser.add_argument('--start', action='store_true')
+  parser.add_argument('--stop', action='store_true')
+  parser.add_argument('--status', action='store_true')
+  parser.add_argument('--exit-code', action='store_true')
+  parser.add_argument('--src', choices=('bash',))
+  args = parser.parse_args(argv)
+
+  context = PowerlineContext(os.getcwd(), args.exit_code or 0)
+  powerline = load_powerline(
+    args.file or os.path.expanduser('~/.local/powerline/config.json'),
+    default=static.default_powerline)
+
+  if args.src == 'bash':
+    print(static.bash_src)
+    sys.exit(0)
+  elif args.src:
+    parser.error('unexpected argument for --src: {!r}'.format(args.src))
+
+  if not args.start and not args.stop and not args.status:
+    print(powerline.render(context, escape_unprintable=args.escape), end='')
+    return
+
+  run_dir = args.run_dir or os.path.expanduser('~/.local/powerline')
+  log_file = os.path.join(run_dir, 'daemon.log')
+  pid_file = os.path.join(run_dir, 'daemon.pid')
+  socket_file = os.path.join(run_dir, 'daemon.sock')
+
+  if os.path.isfile(pid_file):
+    with open(pid_file) as fp:
+      daemon_pid = int(fp.read().strip())
+  else:
+    daemon_pid = None
+
+  if args.stop and daemon_pid:
+    print('Stopping', daemon_pid)
+    process_terminate(daemon_pid)
+  if args.start:
+    def run(powerline, stdout):
+      with open(pid_file, 'w') as fp:
+        fp.write(str(os.getpid()))
+      print('Started', os.getpid())
+      signal.signal(signal.SIGTERM, lambda: os.remove(pid_file))
+      replace_stdio(None, stdout, stdout)
+      conf = server.Address.UnixFile(socket_file)
+      server.PowerlineServer(conf, powerline).run_forever()
+
+    os.makedirs(run_dir, exist_ok=True)
+    stdout = open(log_file, 'a')
+    spawn_daemon(lambda: run(powerline, stdout))
+  if args.status:
+    if not daemon_pid or not process_exists(daemon_pid):
+      if args.exit_code:
+        sys.exit(7)
+      print('stopped')
     else:
-      raise TypeError('unexpected type {}'.format(type(value).__name__))
-    self.r = r
-    self.g = g
-    self.b = b
-
-  def __repr__(self):
-    return 'TrueColor(r={}, g={}, b={})'.format(self.r, self.g, self.b)
-
-
-class _ColorDict(object):
-
-  def __init__(self, colors):
-    self._colors = colors
-
-  def __getitem__(self, name):
-    return self._colors[name]
-
-  def __setitem__(self, name, value):
-    self._colors[name] = TrueColor(value)
-
-  def __delitem__(self, name):
-    del self._colors[name]
-
-
-class _LazyPluginDict(object):
-
-  def __init__(self, powerline):
-    self._powerline = powerline
-
-  def __getitem__(self, key):
-    plugin = self._powerline.get_plugin(key)
-    if plugin is None:
-      raise KeyError(key)
-    return plugin
-
-
-@nr.sumtype.add_constructor_tests
-class DrawOp(nr.sumtype.Sumtype):
-  PropagateBg = nr.sumtype.Constructor()  # Indicated by the "!" character in a format string
-  SetPen = nr.sumtype.Constructor('pen')
-  BlitText = nr.sumtype.Constructor('text')
-
-
-def render_format_string(fmt_string, values):
-  """
-  Similar to :meth:`str.format`. Can read from arbitrary dictionary-like
-  objects. Replaces non-existent values with the same syntax string.
-  """
-
-  expr = '\{(.*?)\}'
-
-  def subst_func(m):
-    parts = m.group(1).split('.')
-    try:
-      value = values[parts[0]]
-    except KeyError:
-      return '{' + m.group(1) + '}'
-    for part in parts[1:]:
-      try:
-        value = getattr(value, part)
-      except AttributeError:
-        return '{' + m.group(1) + '}'
-    return six.text_type(value)
-
-  return re.sub(expr, subst_func, fmt_string)
+      if args.exit_code:
+        sys.exit(0)
+      print('running')

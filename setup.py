@@ -11,7 +11,7 @@ with io.open('src/nr/powerline/__init__.py', encoding='utf8') as fp:
 with io.open('README.md', encoding='utf8') as fp:
   long_description = fp.read()
 
-requirements = ['nr.parsing.core >=0.0.1,<0.1.0', 'nr.sumtype >=0.0.3,<0.1.0', 'nr.utils.process >=0.0.3,<0.1.0', 'termcolor >=1.1.0,<2.0.0']
+requirements = ['nr.databind.core >=0.0.6,<0.1.0', 'nr.databind.json >=0.0.6,<0.1.0', 'nr.interface >=0.0.2,<0.1.0', 'nr.sumtype >=0.0.3,<0.1.0', 'nr.utils.process >=0.0.3,<0.1.0']
 
 setuptools.setup(
   name = 'nr.powerline',
@@ -33,13 +33,12 @@ setuptools.setup(
   data_files = [],
   entry_points = {
     'console_scripts': [
-      'nr-powerline = nr.powerline.main:main',
+      'nr-powerline = nr.powerline:main',
     ],
     'nr.powerline.plugins': [
-      'c = nr.powerline.plugins.characters:CharactersPlugin',
-      'git = nr.powerline.plugins.git:GitPlugin',
-      'session = nr.powerline.plugins.session:SessionPlugin',
-      'time = nr.powerline.plugins.time:TimePlugin',
+      'cwd = nr.powerline.cwd:CwdPlugin',
+      'git = nr.powerline.git:GitPlugin',
+      'text = nr.powerline.text:TextPlugin',
     ]
   },
   cmdclass = {},

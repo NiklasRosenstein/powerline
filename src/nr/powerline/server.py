@@ -19,15 +19,23 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-from . import PowerLine
-import socket as _socket
+import json
 import nr.sumtype
 import os
+import socket as _socket
 import traceback
-from typing import Callable
+
+from nr.databind.core import Field, Struct
+from nr.databind.json import JsonMixin
 
 
-class SocketConf(nr.sumtype.Sumtype):
+class Request(Struct, JsonMixin):
+  path = Field(str)
+  escape_unprintable = Field(bool, default=True)
+  exit_code = Field(int, default=0)
+
+
+class Address(nr.sumtype.Sumtype):
   Ipv4 = nr.sumtype.Constructor('host,port')
   UnixFile = nr.sumtype.Constructor('filename')
 
@@ -56,9 +64,9 @@ class SocketConf(nr.sumtype.Sumtype):
     socket.connect(self.filename)
 
 
-class PowerlineDaemon:
+class PowerlineServer:
 
-  def __init__(self, conf: SocketConf, powerline: Callable[[], PowerLine]) -> None:
+  def __init__(self, conf: Address, powerline: 'Powerline') -> None:
     self._conf = conf
     self._powerline = powerline
 
@@ -73,31 +81,22 @@ class PowerlineDaemon:
           conn, address = socket.accept()
         except _socket.timeout:
           continue
-        path = conn.makefile().readline().strip()
-        try:
-          os.chdir(path)
-          result = str(self._powerline())
-        except Exception as exc:
-          result = traceback.format_exc()
-        conn.makefile('w').write(result)
-        conn.close()
+        self._handle_connection(conn, address)
     finally:
       socket.close()
-      if isinstance(self._conf, SocketConf.UnixFile):
+      if isinstance(self._conf, Address.UnixFile):
         os.remove(self._conf.filename)
 
+  def _handle_connection(self, conn, address):
+    from . import PowerlineContext
 
-class PowerlineClient:
-
-  def __init__(self, conf: SocketConf):
-    self._conf = conf
-
-  def request(self, path: str) -> str:
-    socket = _socket.socket(self._conf.type())
-    self._conf.connect(socket)
-    path = os.path.abspath(path)
     try:
-      socket.makefile('w').write(path + '\n')
-      return socket.makefile().read()
-    finally:
-      socket.close()
+      request = Request.from_json(json.loads(conn.makefile().readline().strip()))
+      context = PowerlineContext(request.path, request.exit_code)
+      result = self._powerline.render(context,
+        escape_unprintable=request.escape_unprintable)
+    except Exception as exc:
+      result = traceback.format_exc()
+
+    conn.makefile('w').write(result)
+    conn.close()
