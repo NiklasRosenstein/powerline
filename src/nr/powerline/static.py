@@ -23,6 +23,13 @@
 default_powerline = {
   'plugins': [
     {
+      'type': 'text',
+      'text': ' ● ',
+      'is-server-indicator': True,
+      'style': 'red black bold',
+      'indicator-style': 'green black bold'
+    },
+    {
       'type': 'venv',
       'style': 'bg:black italic'
     },

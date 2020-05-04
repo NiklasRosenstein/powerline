@@ -30,14 +30,17 @@ from typing import Iterable, List
 @implements(PowerlinePlugin)
 class TextPlugin(Struct):
   style = Field(ansi.Style, default=None)
+  is_server_indicator = Field(bool, FieldName('is-server-indicator'), default=False)
   is_status_indicator = Field(bool, FieldName('is-status-indicator'), default=False)
-  bad_status_style = Field(ansi.Style, default=ansi.parse_style('bg:red bold'))
+  indicator_style = Field(ansi.Style, FieldName('indicator-style'), default=ansi.parse_style('bg:red bold'))
   text = Field(str)
 
   @override
   def render(self, context: PowerlineContext) -> Iterable[Pen]:
-    if self.is_status_indicator and context.exit_code != 0:
-      style = self.bad_status_style
+    if self.is_server_indicator and context.is_server:
+      style = self.indicator_style
+    elif self.is_status_indicator and context.exit_code != 0:
+      style = self.indicator_style
     else:
       style = self.style or context.default_style
     yield Pen.Text(self.text, style)
