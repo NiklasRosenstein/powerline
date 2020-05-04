@@ -51,18 +51,12 @@ def get_output(
 
 @implements(PowerlinePlugin)
 class GitPlugin(Struct):
-  style = Field(ansi.Style, default=ansi.parse_style('bold'))
+  style = Field(ansi.Style, default=None)
   colors = Field({
     'conflicted': Field(ansi.Color, default=ansi.SgrColor('red')),
     'modified': Field(ansi.Color, default=ansi.SgrColor('yellow')),
     'staged': Field(ansi.Color, default=ansi.SgrColor('green')),
     'else_': Field(ansi.Color, FieldName('else'), default=ansi.SgrColor('black', True)),
-  }, nullable=True, default=Field.DEFAULT_CONSTRUCT)
-  icons = Field({
-    'conflicted': Field(str, default=chars.SNOWFLAKE),
-    'modified': Field(str, default=chars.PENCIL),
-    'staged': Field(str, default=chars.HEAVY_CHECKMARK),
-    'else_': Field(str, FieldName('else'), default=chars.HEAVY_CHECKMARK)
   }, nullable=True, default=Field.DEFAULT_CONSTRUCT)
   padding = Field(str, default=' ')
 
@@ -113,16 +107,12 @@ class GitPlugin(Struct):
 
     status = self._get_repo_status(context.path)
     if status.conflicted:
-      icon = self.icons.conflicted if self.icons else ''
       bg = self.colors.conflicted if self.colors else self.style.bg
     elif status.modified:
-      icon = self.icons.modified if self.icons else ''
       bg = self.colors.modified if self.colors else self.style.bg
     elif status.staged:
-      icon = self.icons.staged if self.icons else ''
       bg = self.colors.staged if self.colors else self.style.bg
     else:
-      icon = self.icons.else_ if self.icons else ''
       bg = self.colors.else_ if self.colors else self.style.bg
 
     if self.style:
@@ -131,8 +121,5 @@ class GitPlugin(Struct):
       style = context.default_style
     style = style.replace(bg=bg)
 
-    if icon:
-      icon = self.padding + icon + self.padding
-
-    yield Pen.Text(icon + '{0}{1}{0}'.format(self.padding, branch), style)
+    yield Pen.Text('{0}{2}{0}{1}{0}'.format(self.padding, branch, chars.BRANCH), style)
     yield Pen.Flipchar(chars.RIGHT_TRIANGLE)

@@ -38,8 +38,7 @@ default_powerline = {
       'breadcrumbs': {}
     },
     {
-      'type': 'git',
-      'icons': None
+      'type': 'git'
     },
     {
       'type': 'text',
