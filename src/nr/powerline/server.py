@@ -107,8 +107,8 @@ class PowerlineServer:
     from . import PowerlineContext
 
     try:
-      data = json.loads(conn.makefile().read())
-      logger.info('Request from %s: %r', address, data)
+      data = json.loads(conn.makefile().readline())
+      logger.debug('Request from %s: %r', address or '??', data)
       request = Request.from_json(data)
       context = PowerlineContext(
         request.path,
