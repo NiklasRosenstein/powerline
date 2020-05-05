@@ -21,6 +21,7 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 from . import chars, server, static
+from .utils import register_signal_handler, try_remove
 from nr import ansiterm as ansi
 from nr.interface import Interface
 from nr.sumtype import Constructor, Sumtype
@@ -233,10 +234,11 @@ def main(argv=None):
       with open(pid_file, 'w') as fp:
         fp.write(str(os.getpid()))
       logger.info('Started %d', os.getpid())
-      signal.signal(signal.SIGTERM, lambda: os.remove(pid_file))
+      register_signal_handler('SIGINT', lambda *a: try_remove(pid_file))
       replace_stdio(None, stdout, stdout)
       conf = server.Address.UnixFile(socket_file)
       server.PowerlineServer(conf, powerline).run_forever()
+      logger.info('Bye bye')
 
     os.makedirs(run_dir, exist_ok=True)
     stdout = open(log_file, 'a')

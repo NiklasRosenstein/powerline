@@ -26,6 +26,7 @@ import os
 import socket as _socket
 import traceback
 
+from .utils import try_remove
 from nr.databind.core import Field, IntegerType, Struct
 from nr.databind.json import JsonMixin
 from typing import Dict
@@ -96,12 +97,11 @@ class PowerlineServer:
           continue
         self._handle_connection(conn, address)
     except KeyboardInterrupt:
-      pass
+      logger.info('Interrupt received, stopping server.')
     finally:
       socket.close()
       if isinstance(self._conf, Address.UnixFile):
-        logger.info('Removing %r', self._conf.filename)
-        os.remove(self._conf.filename)
+        try_remove(self._conf.filename)
 
   def _handle_connection(self, conn, address):
     from . import PowerlineContext
