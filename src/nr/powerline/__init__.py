@@ -38,7 +38,7 @@ import signal
 import sys
 
 __author__ = 'Niklas Rosenstein <rosensteinniklas@gmail.com>'
-__version__ = '0.0.10'
+__version__ = '0.0.11'
 
 logger = logging.getLogger(__name__)
 
