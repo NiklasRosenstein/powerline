@@ -54,6 +54,8 @@ class CwdPlugin(Struct):
     if len(parts) > self.breadcrumbs.max_crumbs:
       neg_offset = len(parts) - self.breadcrumbs.max_crumbs + 1
       parts = [parts[0]] + [chars.ELLIPSIS] + parts[-neg_offset:]
+    if not parts[0]:
+      parts.pop(0)
     return parts
 
   @override
