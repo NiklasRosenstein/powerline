@@ -56,6 +56,8 @@ class CwdPlugin(Struct):
       parts = [parts[0]] + [chars.ELLIPSIS] + parts[-neg_offset:]
     if not parts[0]:
       parts.pop(0)
+    if not parts or parts == ['']:
+      parts = ['/']
     return parts
 
   @override
