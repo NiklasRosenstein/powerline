@@ -1,0 +1,6 @@
+- types:
+  - feature
+  issues: []
+  components:
+  - cli
+  description: add `--fake-server` option

@@ -12,7 +12,7 @@ __Requirements__
 - Pipx
 - Python 3.5+
 - Linux/macOS
-- jq
+- jq (If not available, the environment variables cannot be sent from Bash to the powerline server)
 
 __Installation__
 

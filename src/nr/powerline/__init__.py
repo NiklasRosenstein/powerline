@@ -120,12 +120,10 @@ class PowerlineContext:
     self.path = path
     self.exit_code = exit_code
     self.default_style = default_style or ansi.parse_style('white blue')
-    self.env = env
+    self.env = os.environ if env is None else env
     self.is_server = is_server
 
   def getenv(self, name: str, default: str = None) -> Optional[str]:
-    if self.env is None:
-      return os.getenv(name, default)
     return self.env.get(name, default)
 
 
@@ -191,6 +189,7 @@ def main(argv=None):
   parser.add_argument('--start', action='store_true')
   parser.add_argument('--stop', action='store_true')
   parser.add_argument('--status', action='store_true')
+  parser.add_argument('--fake-server', action='store_true')
   parser.add_argument('--exit-code', action='store_true')
   parser.add_argument('--src', choices=('bash',))
   args = parser.parse_args(argv)
@@ -203,7 +202,8 @@ def main(argv=None):
   context = PowerlineContext(
     os.getcwd(),
     args.exit_code or 0,
-    default_style=powerline.default_style)
+    default_style=powerline.default_style,
+    is_server=args.fake_server)
 
   if args.src == 'bash':
     print(static.bash_src)
