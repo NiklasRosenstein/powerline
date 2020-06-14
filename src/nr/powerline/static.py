@@ -24,28 +24,34 @@ default_powerline = {
   'plugins': [
     {
       'type': 'text',
-      'text': ' ● ',
+      'text': ' ${username} ',
       'is-server-indicator': True,
-      'style': 'red black bold',
-      'indicator-style': 'green black bold'
+      'style': 'red #444 bold',
+      'indicator-style': 'green #444 bold',
     },
     {
       'type': 'venv',
-      'style': 'bg:black italic'
+      'style': 'bg:#333 italic',
     },
     {
       'type': 'cwd',
-      'breadcrumbs': {}
+      'breadcrumbs': {},
+      'style': 'bg:#1c7bba',
     },
     {
-      'type': 'git'
+      'type': 'git',
+      'colors': {
+        'conflicted': '#a44',
+        'modified': '#b58526',
+        'staged': '#4a4',
+      },
     },
     {
       'type': 'text',
       'text': ' $ ',
-      'style': 'bg:black',
-      'is-status-indicator': True
-    }
+      'style': 'bg:#444',
+      'is-status-indicator': True,
+    },
   ]
 }
 

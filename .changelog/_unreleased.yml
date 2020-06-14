@@ -18,3 +18,9 @@
   - plugins
   description: Venv plugin now has a "parenthesized" option by default, which is enabled
     by default
+- types:
+  - change
+  issues: []
+  components:
+  - default-config
+  description: update default config to use TrueColor
