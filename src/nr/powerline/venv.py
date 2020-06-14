@@ -31,6 +31,7 @@ import os
 @implements(PowerlinePlugin)
 class VenvPlugin(Struct):
   style = Field(ansi.Style, default=None)
+  parenthesized = Field(bool, default=True)
 
   def render(self, context: PowerlineContext) -> Iterable[Pen]:
     env = (context.getenv('VIRTUAL_ENV') or context.getenv('CONDA_ENV_PATH') or
@@ -40,5 +41,7 @@ class VenvPlugin(Struct):
     if not env:
       return
     env_name = os.path.basename(env)
+    if self.parenthesized:
+      env_name = '(' + env_name  + ')'
     yield Pen.Text(' ' + env_name + ' ', self.style or context.default_style)
     yield Pen.Flipchar(chars.RIGHT_TRIANGLE)

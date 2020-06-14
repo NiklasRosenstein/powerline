@@ -10,3 +10,11 @@
   components:
   - plugins
   description: Text plugin now supports a "${username}" variable
+- types:
+  - feature
+  - change
+  issues: []
+  components:
+  - plugins
+  description: Venv plugin now has a "parenthesized" option by default, which is enabled
+    by default
