@@ -4,3 +4,9 @@
   components:
   - cli
   description: add `--fake-server` option
+- types:
+  - feature
+  issues: []
+  components:
+  - plugins
+  description: Text plugin now supports a "${username}" variable

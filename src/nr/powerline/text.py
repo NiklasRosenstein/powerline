@@ -20,11 +20,13 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import getpass
+import re
 from . import chars, Pen, PowerlineContext, PowerlinePlugin
 from nr import ansiterm as ansi
 from nr.databind.core import Field, FieldName, Struct
 from nr.interface import implements, override
-from typing import Iterable, List
+from typing import Callable, Dict, Iterable, List
 
 
 @implements(PowerlinePlugin)
@@ -46,6 +48,19 @@ class TextPlugin(Struct):
   indicator_style_2 = Field(ansi.Style, FieldName('indicator-style-2'), default=ansi.parse_style('fg:yellow'))
   text = Field(str)
 
+  def get_vars(self) -> Dict[str, Callable]:
+    return {
+      'username': getpass.getuser,
+    }
+
+  def get_text(self) -> str:
+    variables = self.get_vars()
+    def _sub(m):
+      if m.group(1) not in variables:
+        return m.group(0)
+      return variables[m.group(1)]()
+    return re.sub(r'\$\{([\w\d\_]+)\}', _sub, self.text)
+
   @override
   def render(self, context: PowerlineContext) -> Iterable[Pen]:
     if self.is_server_indicator and context.is_server:
@@ -58,5 +73,5 @@ class TextPlugin(Struct):
     else:
       style = self.style or context.default_style
     style = style.merge(self.style or context.default_style)
-    yield Pen.Text(self.text, style)
+    yield Pen.Text(self.get_text(), style)
     yield Pen.Flipchar(chars.RIGHT_TRIANGLE)
