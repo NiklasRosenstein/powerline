@@ -230,6 +230,9 @@ def main(argv=None):
     logger.info('Stopping %d', daemon_pid)
     process_terminate(daemon_pid)
   if args.start:
+    if os.path.exists(socket_file):
+      os.remove(socket_file)
+
     def run(powerline, stdout):
       with open(pid_file, 'w') as fp:
         fp.write(str(os.getpid()))

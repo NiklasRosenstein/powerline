@@ -1,0 +1,6 @@
+- types:
+  - fix
+  issues: []
+  components:
+  - server
+  description: remove existing `daemon.sock` file when using `--start` option
