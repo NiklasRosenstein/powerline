@@ -26,8 +26,8 @@ default_powerline = {
       'type': 'text',
       'text': ' ${username} ',
       'is-server-indicator': True,
-      'style': 'red #444 bold',
-      'indicator-style': 'green #444 bold',
+      'style': '#d43 #444 bold',
+      'indicator-style': '#3d7 #444 bold',
     },
     {
       'type': 'venv',
